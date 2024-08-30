@@ -15,6 +15,13 @@
       "when": 1724578003922,
       "tag": "0001_chunky_arachne",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1724783029757,
+      "tag": "0002_giant_gorgon",
+      "breakpoints": true
     }
   ]
 }

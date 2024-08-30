@@ -5,14 +5,10 @@ import { userLogInFormSchema } from "~/utils/schema";
 export default defineEventHandler(async (event) => {
   try {
     const result = await readValidatedBody(event, (body) =>
-      userLogInFormSchema.safeParse(body),
+      userLogInFormSchema.parse(body),
     );
 
-    if (!result.success) {
-      return { error: "Invalid request data" };
-    }
-
-    const { email, password } = result.data;
+    const { email, password } = result;
 
     const users = await useDrizzle()
       .select()
@@ -35,6 +31,7 @@ export default defineEventHandler(async (event) => {
           id: user.id,
           name: user.name,
           email: user.email,
+          imageUrl: user.imageUrl,
         },
         loggedInAt: new Date(),
       });

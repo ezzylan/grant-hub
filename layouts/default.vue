@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useWindowSize } from "@vueuse/core";
+
 const { loggedIn, user, clear } = useUserSession();
 
 const navLinks = [
@@ -40,8 +42,6 @@ const navLinks = [
   },
 ];
 
-const isLogInOpen = ref(false);
-
 const logInModalItems = [
   {
     label: "Log In",
@@ -82,6 +82,9 @@ const userDropdownItems = [
     },
   ],
 ];
+
+const { width } = useWindowSize();
+const isLogInOpen = ref(false);
 </script>
 
 <template>
@@ -102,7 +105,7 @@ const userDropdownItems = [
 
     <UHorizontalNavigation
       :ui="{ wrapper: 'w-fit' }"
-      class="hidden sm:block"
+      v-if="width >= 640"
       :links="navLinks"
     >
       <template #icon="{ link }">
@@ -122,7 +125,11 @@ const userDropdownItems = [
         trailing-icon="i-heroicons-chevron-down-20-solid"
         class="space-x-2 shadow-sm hover:shadow-md"
       >
-        <UAvatar :alt="user?.name" size="sm" />
+        <UAvatar
+          :src="user?.imageUrl ?? undefined"
+          :alt="user?.name"
+          size="sm"
+        />
         <div class="hidden text-left md:block">
           <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">
             {{ user?.name }}
@@ -156,7 +163,7 @@ const userDropdownItems = [
 
   <UModal v-model="isAddGrantOpen">
     <div class="p-4">
-      <AddGrantForm @close-modal="isAddGrantOpen = false" />
+      <LazyAddGrantForm @close-modal="isAddGrantOpen = false" />
     </div>
   </UModal>
 </template>

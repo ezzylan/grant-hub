@@ -4,23 +4,22 @@ import { grantFormSchema } from "~/utils/schema";
 export default defineEventHandler(async (event) => {
   await authorize(event, addGrant);
   const result = await readValidatedBody(event, (body) =>
-    grantFormSchema.safeParse(body),
+    grantFormSchema.parse(body),
   );
-
-  if (!result.success) throw result.error.issues;
 
   const { user } = await getUserSession(event);
 
   return await useDrizzle().insert(tables.grants).values({
-    name: result.data.name,
-    funder: result.data.funder,
-    category: result.data.category,
-    description: result.data.description,
-    websiteLink: result.data.websiteLink,
-    ceiling: result.data.ceiling,
-    expectedGrantCall: result.data.expectedGrantCall,
-    deadline: result.data.deadline,
-    availability: result.data.availability,
-    creatorId: user?.id,
+    name: result.name,
+    funder: result.funder,
+    category: result.category,
+    description: result.description,
+    websiteLink: result.websiteLink,
+    ceiling: result.ceiling,
+    expectedGrantCall: result.expectedGrantCall,
+    deadline: result.deadline,
+    availability: result.availability,
+    creatorId: user!.id,
+    imageUrl: result.imageUrl,
   });
 });

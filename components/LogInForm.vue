@@ -7,10 +7,12 @@ const state = reactive({
   password: undefined,
 });
 
+const loading = ref(false);
 const form = ref();
 const toast = useToast();
 
 async function onSubmit(event: FormSubmitEvent<UserLogInFormSchema>) {
+  loading.value = true;
   form.value.clear();
 
   try {
@@ -57,6 +59,8 @@ async function onSubmit(event: FormSubmitEvent<UserLogInFormSchema>) {
       <UInput v-model="state.password" type="password" />
     </UFormGroup>
 
-    <UButton type="submit"> Submit </UButton>
+    <UButton :loading type="submit">{{
+      loading ? "Submitting..." : "Submit"
+    }}</UButton>
   </UForm>
 </template>

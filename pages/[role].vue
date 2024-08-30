@@ -10,21 +10,61 @@ useHead({ title });
 const expertiseArea = ref(`All ${title}`);
 const expertiseAreas = [expertiseArea.value];
 
-const { data: fetchedExpertiseAreas } = await useFetch("/api/expertise-areas");
+const { data: fetchedExpertiseAreas } = await useLazyFetch(
+  "/api/expertise-areas",
+  {
+    transform: (input) => {
+      return { input, fetchedAt: new Date() };
+    },
+    getCachedData(key, nuxtApp) {
+      const data = nuxtApp.payload.data[key] || nuxtApp.static.data[key];
+      if (!data) {
+        return;
+      }
 
-if (fetchedExpertiseAreas.value) {
-  expertiseAreas.push(...fetchedExpertiseAreas.value);
+      const expirationDate = new Date(data.fetchedAt);
+      expirationDate.setTime(expirationDate.getTime() + 30 * 1000);
+      const isExpired = expirationDate.getTime() < Date.now();
+      if (isExpired) {
+        return;
+      }
+
+      return data;
+    },
+  },
+);
+
+if (fetchedExpertiseAreas.value?.input) {
+  expertiseAreas.push(...fetchedExpertiseAreas.value.input);
 }
 
-const { data: users } = await useFetch(`/api/${role}`, {
+const { status, data: users } = await useLazyFetch(`/api/${role}`, {
   query: { expertiseArea },
   watch: [expertiseArea],
   transform: (users: SelectUser[]) => {
-    return users.map((user) => ({
+    const fetchedUsers = users.map((user) => ({
       id: user.id,
       name: user.name,
       expertiseArea: user.expertiseArea,
+      imageUrl: user.imageUrl,
     }));
+
+    return { ...fetchedUsers, fetchedAt: new Date() };
+  },
+  getCachedData(key, nuxtApp) {
+    const data = nuxtApp.payload.data[key] || nuxtApp.static.data[key];
+    if (!data) {
+      return;
+    }
+
+    const expirationDate = new Date(data.fetchedAt);
+    expirationDate.setTime(expirationDate.getTime() + 30 * 1000);
+    const isExpired = expirationDate.getTime() < Date.now();
+    if (isExpired) {
+      return;
+    }
+
+    return data;
   },
 });
 
@@ -50,38 +90,52 @@ const page = ref(1);
       />
     </div>
 
-    <div class="space-y-4" v-if="users && users.length > 0">
-      <div
-        class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
-      >
-        <NuxtLink
-          v-for="user in users"
-          :key="user.id"
-          :to="{ name: 'users-id', params: { id: user.id } }"
-        >
-          <UCard>
-            <NuxtImg :src="`https://placehold.co/400?text=User`" />
-            <template #footer>
-              <div class="space-y-2">
-                <h3
-                  class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
-                >
-                  {{ user.name }}
-                </h3>
-                <p class="text-sm">{{ user.expertiseArea }}</p>
-              </div>
-            </template>
-          </UCard>
-        </NuxtLink>
-      </div>
-
-      <div class="flex justify-end">
-        <UPagination v-model="page" :total="users.length" />
-      </div>
+    <div
+      class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+      v-if="status === 'pending'"
+    >
+      <UCard v-for="i in 6">
+        <USkeleton class="h-40" />
+        <template #footer>
+          <div class="space-y-2">
+            <USkeleton v-for="i in 2" class="h-4" />
+          </div>
+        </template>
+      </UCard>
     </div>
 
-    <p v-else>
-      No {{ role === "npo-members" ? "NPO members" : noCase(role) }} found.
-    </p>
+    <template v-else>
+      <div class="space-y-4" v-if="users && users.length > 0">
+        <div
+          class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+        >
+          <NuxtLink
+            v-for="user in users"
+            :key="user.id"
+            :to="{ name: 'users-id', params: { id: user.id } }"
+          >
+            <UCard>
+              <NuxtImg :src="user.imageUrl" />
+              <template #footer>
+                <div class="space-y-2">
+                  <h3
+                    class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
+                  >
+                    {{ user.name }}
+                  </h3>
+                  <p class="text-sm">{{ user.expertiseArea }}</p>
+                </div>
+              </template>
+            </UCard>
+          </NuxtLink>
+        </div>
+        <div class="flex justify-end">
+          <UPagination v-model="page" :total="users.length" />
+        </div>
+      </div>
+      <p v-else>
+        No {{ role === "npo-members" ? "NPO members" : noCase(role) }} found.
+      </p>
+    </template>
   </NuxtLayout>
 </template>

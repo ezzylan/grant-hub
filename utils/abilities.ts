@@ -3,6 +3,8 @@ import type { SelectGrant } from "~/server/utils/drizzle";
 
 export const addGrant = defineAbility(() => true);
 
+export const uploadImage = defineAbility(() => true);
+
 export const editGrant = defineAbility((user: User, grant: SelectGrant) => {
   return user.id === grant.creatorId;
 });

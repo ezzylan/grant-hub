@@ -11,7 +11,12 @@ export const grants = sqliteTable("grants", {
   expectedGrantCall: text("expected_grant_call").notNull(),
   deadline: text("deadline").notNull(),
   availability: text("availability").notNull(),
-  creatorId: integer("creator_id").references(() => users.id),
+  imageUrl: text("image_url"),
+  creatorId: integer("creator_id")
+    .references(() => users.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
 });
 
 export const users = sqliteTable("users", {
@@ -26,4 +31,5 @@ export const users = sqliteTable("users", {
   qualification: text("qualification").notNull(),
   expertiseArea: text("expertise_area").notNull(),
   interestArea: text("interest_area").notNull(),
+  imageUrl: text("image_url"),
 });

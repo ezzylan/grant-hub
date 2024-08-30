@@ -5,48 +5,45 @@ import { userSignUpFormSchema } from "~/utils/schema";
 export default defineEventHandler(async (event) => {
   try {
     const result = await readValidatedBody(event, (body) =>
-      userSignUpFormSchema.safeParse(body),
+      userSignUpFormSchema.parse(body),
     );
 
-    if (!result.success) {
-      return { error: "Invalid request data" };
-    }
-
-    const hashedPassword = await bcrypt.hash(result.data.password, 10);
+    const hashedPassword = await bcrypt.hash(result.password, 10);
 
     const dbExpertiseArea = await useDrizzle()
       .select({ expertiseArea: tables.users.expertiseArea })
       .from(tables.users)
-      .where(eq(tables.users.expertiseArea, result.data.expertiseArea));
+      .where(eq(tables.users.expertiseArea, result.expertiseArea));
 
     const dbInterestArea = await useDrizzle()
       .select({ interestArea: tables.users.interestArea })
       .from(tables.users)
-      .where(eq(tables.users.interestArea, result.data.interestArea));
+      .where(eq(tables.users.interestArea, result.interestArea));
 
     try {
       const users = await useDrizzle()
         .insert(tables.users)
         .values({
-          name: result.data.name,
-          email: result.data.email,
+          name: result.name,
+          email: result.email,
           password: hashedPassword,
-          contactNo: result.data.contactNo,
-          role: result.data.role,
-          organization: result.data.organization,
-          position: result.data.position,
+          contactNo: result.contactNo,
+          role: result.role,
+          organization: result.organization,
+          position: result.position,
           qualification:
-            result.data.qualification === "Others"
-              ? result.data.otherQualification!
-              : result.data.qualification,
+            result.qualification === "Others"
+              ? result.otherQualification!
+              : result.qualification,
           expertiseArea:
             dbExpertiseArea.length > 0
               ? dbExpertiseArea[0].expertiseArea
-              : result.data.expertiseArea,
+              : result.expertiseArea,
           interestArea:
             dbInterestArea.length > 0
               ? dbInterestArea[0].interestArea
-              : result.data.interestArea,
+              : result.interestArea,
+          imageUrl: result.imageUrl,
         })
         .returning();
 
@@ -57,6 +54,7 @@ export default defineEventHandler(async (event) => {
           id: user.id,
           name: user.name,
           email: user.email,
+          imageUrl: user.imageUrl,
         },
         loggedInAt: new Date(),
       });

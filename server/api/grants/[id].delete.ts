@@ -7,13 +7,20 @@ export default defineEventHandler(async (event) => {
 
   const deletedGrant = await useDrizzle()
     .delete(tables.grants)
-    .where(and(eq(tables.grants.id, Number(id))));
+    .where(and(eq(tables.grants.id, Number(id))))
+    .returning();
 
-  if (!deletedGrant) {
+  if (deletedGrant.length === 0) {
     throw createError({
       statusCode: 404,
       message: "Grant not found",
     });
+  }
+
+  if (deletedGrant[0].imageUrl) {
+    const imageUrl = deletedGrant[0].imageUrl;
+    const imageKey = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+    await utapi.deleteFiles(imageKey);
   }
 
   return deletedGrant;

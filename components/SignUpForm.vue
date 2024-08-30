@@ -4,6 +4,8 @@ import type { FormSubmitEvent } from "#ui/types";
 
 const emit = defineEmits<{ (e: "closeModal"): void }>();
 
+const imageFile = ref<File | null>(null);
+
 const state = reactive({
   name: undefined,
   email: undefined,
@@ -16,6 +18,7 @@ const state = reactive({
   otherQualification: undefined,
   expertiseArea: undefined,
   interestArea: undefined,
+  imageUrl: "",
 });
 
 watch(state, () => {
@@ -32,17 +35,38 @@ const qualifications = [
 ];
 
 const form = ref();
+const loading = ref(false);
+const toast = useToast();
+
+const { startUpload } = useUploadThing("signUpImageUploader", {
+  onClientUploadComplete(res) {
+    state.imageUrl = res[0].url;
+  },
+  onUploadError() {
+    toast.add({
+      title: "User image upload failed!",
+      description: "Try checking the file size.",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
+    });
+  },
+});
 
 async function onSubmit(event: FormSubmitEvent<UserSignUpFormSchema>) {
+  loading.value = true;
   form.value.clear();
 
   try {
-    await $fetch("/api/auth/signup", {
-      method: "POST",
-      body: event.data,
-    });
+    const result = imageFile.value && (await startUpload([imageFile.value]));
 
-    reloadNuxtApp();
+    if (result) {
+      await $fetch("/api/auth/signup", {
+        method: "POST",
+        body: event.data,
+      });
+
+      reloadNuxtApp();
+    }
   } catch (err) {
     if (err.statusCode === 422) {
       form.value.setErrors(
@@ -53,6 +77,8 @@ async function onSubmit(event: FormSubmitEvent<UserSignUpFormSchema>) {
         })),
       );
     }
+  } finally {
+    loading.value = false;
   }
 }
 </script>
@@ -121,6 +147,27 @@ async function onSubmit(event: FormSubmitEvent<UserSignUpFormSchema>) {
       <UInput v-model="state.interestArea" />
     </UFormGroup>
 
-    <UButton type="submit"> Submit </UButton>
+    <UFormGroup
+      label="Profile Picture"
+      name="imageFile"
+      hint="File size must be less than 1MB"
+    >
+      <UInput
+        type="file"
+        accept="image/*"
+        @input="
+          (e: Event) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            imageFile = file;
+          }
+        "
+      />
+    </UFormGroup>
+
+    <UButton :loading type="submit">{{
+      loading ? "Submitting..." : "Submit"
+    }}</UButton>
   </UForm>
 </template>

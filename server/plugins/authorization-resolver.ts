@@ -1,8 +1,10 @@
 export default defineNitroPlugin((nitroApp) => {
-  nitroApp.$authorization = {
-    resolveServerUser: async (event) => {
-      const session = await getUserSession(event);
-      return session.user ?? null;
-    },
-  };
+  nitroApp.hooks.hook("request", async (event) => {
+    event.context.$authorization = {
+      resolveServerUser: async () => {
+        const session = await getUserSession(event);
+        return session.user ?? null;
+      },
+    };
+  });
 });

@@ -7,7 +7,7 @@ export default defineConfig({
   driver: "turso",
   dbCredentials: {
     // url: "file:local.db",
-    url: process.env.TURSO_DATABASE_URL!,
-    authToken: process.env.TURSO_AUTH_TOKEN!,
+    url: process.env.NUXT_TURSO_DATABASE_URL!,
+    authToken: process.env.NUXT_TURSO_AUTH_TOKEN!,
   },
 });

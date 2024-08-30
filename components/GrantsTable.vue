@@ -1,6 +1,4 @@
 <script setup lang="ts">
-const { grants } = defineProps<{ grants: SelectGrant[] }>();
-
 const columns = [
   {
     key: "name",
@@ -28,12 +26,10 @@ const isDeleteOpen = ref(false);
 const items = (row: { id: number }) => [
   [
     {
-      label: "Link to Grant",
-      icon: "i-heroicons-arrow-top-right-on-square-20-solid",
+      label: "View Grant",
+      icon: "i-heroicons-eye-20-solid",
       click: () => navigateTo(`/grants/${row.id}`),
     },
-  ],
-  [
     {
       label: "Edit Grant",
       icon: "i-heroicons-pencil-square-20-solid",
@@ -50,6 +46,7 @@ const items = (row: { id: number }) => [
   ],
 ];
 
+const { grants } = defineProps<{ grants: SelectGrant[] }>();
 const q = ref("");
 const page = ref(1);
 const pageCount = 5;
@@ -71,13 +68,15 @@ const rows = computed(() => {
     .slice(start, end);
 });
 
+const loading = ref(false);
 const toast = useToast();
 
 async function deleteGrant(grant: SelectGrant) {
+  loading.value = true;
+
   try {
     await $fetch(`/api/grants/${grant.id}`, {
       method: "DELETE",
-      body: grant,
     });
 
     toast.add({
@@ -95,6 +94,8 @@ async function deleteGrant(grant: SelectGrant) {
       icon: "i-heroicons-exclamation-circle",
       color: "red",
     });
+  } finally {
+    loading.value = false;
   }
 }
 </script>
@@ -118,7 +119,7 @@ async function deleteGrant(grant: SelectGrant) {
 
       <UModal v-model="isEditOpen">
         <div class="p-4">
-          <EditGrantForm @close-modal="isEditOpen = false" :grant="row" />
+          <LazyEditGrantForm @close-modal="isEditOpen = false" :grant="row" />
         </div>
       </UModal>
 
@@ -142,7 +143,9 @@ async function deleteGrant(grant: SelectGrant) {
               <UButton color="gray" @click="isDeleteOpen = false">
                 Cancel
               </UButton>
-              <UButton color="red" @click="deleteGrant(row)">Continue</UButton>
+              <UButton :loading color="red" @click="deleteGrant(row)">{{
+                loading ? "Deleting..." : "Continue"
+              }}</UButton>
             </div>
           </template>
         </UCard>

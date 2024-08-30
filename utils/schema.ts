@@ -5,7 +5,7 @@ export const grantFormSchema = z.object({
   funder: z.string().min(2),
   category: z.enum(["Industry", "Government", "University"]),
   description: z.string().min(1),
-  websiteLink: z.string().url(),
+  websiteLink: z.string(),
   ceiling: z.coerce.number().positive().int().multipleOf(10000),
   expectedGrantCall: z.string().min(2),
   deadline: z.string().min(2),
@@ -21,14 +21,13 @@ export const grantFormSchema = z.object({
     "Reopened",
     "Grant Closed",
   ]),
+  imageUrl: z.string().optional(),
 });
 
 export const userSignUpFormSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  password: z
-    .string()
-    .min(8, { message: "Password must be 8 or more characters long" }),
+  password: z.string().min(8),
   contactNo: z.string().min(10),
   role: z.enum([
     "Academician",
@@ -43,6 +42,7 @@ export const userSignUpFormSchema = z.object({
   otherQualification: z.string().min(3).optional(),
   expertiseArea: z.string().min(2),
   interestArea: z.string().min(2),
+  imageUrl: z.string().optional(),
 });
 
 export const userLogInFormSchema = userSignUpFormSchema.pick({

@@ -7,23 +7,22 @@ export default defineEventHandler(async (event) => {
   const { id } = getRouterParams(event);
 
   const result = await readValidatedBody(event, (body) =>
-    grantFormSchema.safeParse(body),
+    grantFormSchema.parse(body),
   );
-
-  if (!result.success) throw result.error.issues;
 
   return await useDrizzle()
     .update(tables.grants)
     .set({
-      name: result.data.name,
-      funder: result.data.funder,
-      category: result.data.category,
-      description: result.data.description,
-      websiteLink: result.data.websiteLink,
-      ceiling: result.data.ceiling,
-      expectedGrantCall: result.data.expectedGrantCall,
-      deadline: result.data.deadline,
-      availability: result.data.availability,
+      name: result.name,
+      funder: result.funder,
+      category: result.category,
+      description: result.description,
+      websiteLink: result.websiteLink,
+      ceiling: result.ceiling,
+      expectedGrantCall: result.expectedGrantCall,
+      deadline: result.deadline,
+      availability: result.availability,
+      imageUrl: result.imageUrl,
     })
     .where(eq(tables.grants.id, Number(id)));
 });

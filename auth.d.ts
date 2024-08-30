@@ -3,6 +3,7 @@ declare module "#auth-utils" {
     id: number;
     name: string;
     email: string;
+    imageUrl: string | null | undefined;
   }
 
   interface UserSession {

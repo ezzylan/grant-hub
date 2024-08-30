@@ -12,7 +12,67 @@ const state = reactive({
   expectedGrantCall: undefined,
   deadline: undefined,
   availability: undefined,
+  imageUrl: "",
 });
+
+const toast = useToast();
+
+const { startUpload } = useUploadThing("signUpImageUploader", {
+  onClientUploadComplete(res) {
+    state.imageUrl = res[0].url;
+  },
+  onUploadError() {
+    toast.add({
+      title: "Grant image upload failed!",
+      description: "Try checking the file size.",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
+    });
+  },
+});
+
+const loading = ref(false);
+const form = ref();
+const imageFile = ref<File | null>(null);
+const emit = defineEmits<{ (e: "closeModal"): void }>();
+
+async function onSubmit(event: FormSubmitEvent<GrantFormSchema>) {
+  loading.value = true;
+  form.value.clear();
+
+  try {
+    const result = imageFile.value && (await startUpload([imageFile.value]));
+
+    if (result) {
+      await $fetch("/api/grants", {
+        method: "POST",
+        body: event.data,
+      });
+
+      refreshNuxtData();
+      emit("closeModal");
+
+      toast.add({
+        title: "Grant added successfully!",
+        description: "You can now view your grant on the dashboard.",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+    }
+  } catch (err) {
+    if (err.statusCode === 422) {
+      form.value.setErrors(
+        err.data.errors.map((err) => ({
+          // Map validation errors to { path: string, message: string }
+          message: err.message,
+          path: err.path,
+        })),
+      );
+    }
+  } finally {
+    loading.value = false;
+  }
+}
 
 const availabilities = [
   "Pre-Announcement",
@@ -26,42 +86,6 @@ const availabilities = [
   "Reopened",
   "Grant Closed",
 ];
-
-const form = ref();
-const toast = useToast();
-
-const emit = defineEmits<{ (e: "closeModal"): void }>();
-
-async function onSubmit(event: FormSubmitEvent<GrantFormSchema>) {
-  form.value.clear();
-
-  try {
-    await $fetch("/api/grants", {
-      method: "POST",
-      body: event.data,
-    });
-
-    toast.add({
-      title: "Grant added successfully!",
-      description: "You can now view your grant on the dashboard.",
-      icon: "i-heroicons-check-circle",
-      color: "green",
-    });
-
-    refreshNuxtData();
-    emit("closeModal");
-  } catch (err) {
-    if (err.statusCode === 422) {
-      form.value.setErrors(
-        err.data.errors.map((err) => ({
-          // Map validation errors to { path: string, message: string }
-          message: err.message,
-          path: err.path,
-        })),
-      );
-    }
-  }
-}
 </script>
 
 <template>
@@ -121,6 +145,28 @@ async function onSubmit(event: FormSubmitEvent<GrantFormSchema>) {
       />
     </UFormGroup>
 
-    <UButton type="submit"> Submit </UButton>
+    <UFormGroup
+      label="Grant Image"
+      name="imageFile"
+      hint="File size must be less than 1MB"
+      required
+    >
+      <UInput
+        type="file"
+        accept="image/*"
+        @input="
+          (e: Event) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            imageFile = file;
+          }
+        "
+      />
+    </UFormGroup>
+
+    <UButton :loading type="submit">{{
+      loading ? "Submitting..." : "Submit"
+    }}</UButton>
   </UForm>
 </template>

@@ -16,6 +16,8 @@ const qualificationsArray = qualifications
   .filter((q) => q.label !== "Others")
   .map((q) => q.label);
 
+const imageFile = ref<File | null>(null);
+
 const state = reactive({
   name: user.name,
   email: user.email,
@@ -31,6 +33,7 @@ const state = reactive({
     : undefined,
   expertiseArea: user.expertiseArea,
   interestArea: user.interestArea,
+  imageUrl: user.imageUrl,
 });
 
 watch(state, () => {
@@ -39,27 +42,50 @@ watch(state, () => {
   }
 });
 
-const form = ref();
-const route = useRoute();
 const toast = useToast();
 
+const { startUpload } = useUploadThing("signUpImageUploader", {
+  onClientUploadComplete(res) {
+    state.imageUrl = res[0].url;
+  },
+  onUploadError() {
+    toast.add({
+      title: "User image upload failed!",
+      description: "Try checking the file size.",
+      icon: "i-heroicons-exclamation-circle",
+      color: "red",
+    });
+  },
+});
+
+const loading = ref(false);
+const form = ref();
+const route = useRoute();
+const { fetch } = useUserSession();
+
 async function onSubmit(event: FormSubmitEvent<EditUserFormSchema>) {
+  loading.value = true;
   form.value.clear();
 
   try {
-    await $fetch(`/api/users/${route.params.id}`, {
-      method: "PATCH",
-      body: event.data,
-    });
+    const result = imageFile.value && (await startUpload([imageFile.value]));
 
-    refreshNuxtData();
-    emit("closeModal");
+    if (result) {
+      await $fetch(`/api/users/${route.params.id}`, {
+        method: "PATCH",
+        body: event.data,
+      });
 
-    toast.add({
-      title: "Profile updated successfully!",
-      icon: "i-heroicons-check-circle",
-      color: "green",
-    });
+      fetch();
+      refreshNuxtData();
+      emit("closeModal");
+
+      toast.add({
+        title: "Profile updated successfully!",
+        icon: "i-heroicons-check-circle",
+        color: "green",
+      });
+    }
   } catch (err) {
     if (err.statusCode === 422) {
       form.value.setErrors(
@@ -70,6 +96,8 @@ async function onSubmit(event: FormSubmitEvent<EditUserFormSchema>) {
         })),
       );
     }
+  } finally {
+    loading.value = false;
   }
 }
 </script>
@@ -142,6 +170,27 @@ async function onSubmit(event: FormSubmitEvent<EditUserFormSchema>) {
       <UInput v-model="state.interestArea" />
     </UFormGroup>
 
-    <UButton type="submit"> Submit </UButton>
+    <UFormGroup
+      label="Profile Picture"
+      name="imageFile"
+      hint="File size must be less than 1MB"
+    >
+      <UInput
+        type="file"
+        accept="image/*"
+        @input="
+          (e: Event) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            imageFile = file;
+          }
+        "
+      />
+    </UFormGroup>
+
+    <UButton :loading type="submit">{{
+      loading ? "Submitting..." : "Submit"
+    }}</UButton>
   </UForm>
 </template>

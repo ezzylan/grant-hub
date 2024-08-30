@@ -1,7 +1,26 @@
 <script setup lang="ts">
 const route = useRoute();
 
-const { data: grant } = await useFetch(`/api/grants/${route.params.id}`);
+const { data: grant } = await useFetch(`/api/grants/${route.params.id}`, {
+  transform: (input) => {
+    return { ...input, fetchedAt: new Date() };
+  },
+  getCachedData(key, nuxtApp) {
+    const data = nuxtApp.payload.data[key] || nuxtApp.static.data[key];
+    if (!data) {
+      return;
+    }
+
+    const expirationDate = new Date(data.fetchedAt);
+    expirationDate.setTime(expirationDate.getTime() + 30 * 1000);
+    const isExpired = expirationDate.getTime() < Date.now();
+    if (isExpired) {
+      return;
+    }
+
+    return data;
+  },
+});
 
 useHead({ title: grant.value?.name });
 
@@ -58,7 +77,7 @@ function getBadgeColor(availability: string) {
     <p>By {{ grant?.funder }}</p>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <NuxtImg :src="`https://placehold.co/1000?text=Grant`" />
+      <NuxtImg :src="grant?.imageUrl ?? undefined" />
 
       <div class="space-y-4">
         <UCard>
