@@ -10,8 +10,8 @@ A grant management system developed in collaboration with the [Centre for Founda
 
 ## Features
 
-- Check and secure grants from industries, universities or nation-wide
-- Connect with other like-minded individuals
+- Serves as a one-stop center for accessing grant information in Malaysia
+- Facilitates multi-sector collaboration by enabling users from academia, industry, and the community to find and connect with potential partners for research and innovation projects
 
 ## Setup
 
